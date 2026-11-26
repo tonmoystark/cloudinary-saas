@@ -1,9 +1,4 @@
-import { auth } from "@clerk/nextjs/server";
-import React from "react";
-
-const HomePage = async () => {
-  await auth.protect();
-
+const HomePage = () => {
   return <div>HomePage</div>;
 };
 
