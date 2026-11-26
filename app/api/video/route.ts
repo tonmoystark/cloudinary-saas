@@ -4,7 +4,7 @@ import { NextRequest, NextResponse } from "next/server";
 
 export async function GET(req:NextRequest, res:NextResponse){
     try {
-        const videos = prisma.video.findMany({
+        const videos = await prisma.video.findMany({
             orderBy:{
                 createdAt: "desc"
             }
