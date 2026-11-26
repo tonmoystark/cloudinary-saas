@@ -12,4 +12,15 @@ datasource db {
   provider = "postgresql"
 }
 
+model Video {
+  id             String   @id @default(cuid())
+  title          String
+  description    String?
+  publicId       String
+  originalSize   String
+  compressedSize String
+  duration       String
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
 
+}
