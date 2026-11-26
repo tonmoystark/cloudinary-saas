@@ -1,6 +1,5 @@
 import Theme from "@/components/theme/Theme";
 
-
 export default function Home() {
   return (
     <main className="min-h-screen bg-base-200 flex items-center justify-center p-6">
@@ -10,7 +9,7 @@ export default function Home() {
             <h2 className="card-title">daisyUI Check</h2>
             <span className="badge badge-success">Active</span>
           </div>
-          <Theme />
+
           <div role="alert" className="alert alert-info">
             <span>
               If this card, badge, and buttons are styled, daisyUI works!
@@ -24,12 +23,8 @@ export default function Home() {
           </div>
 
           <label className="label cursor-pointer justify-start gap-3">
-            <input
-              type="checkbox"
-              value="dark"
-              className="toggle theme-controller"
-            />
-            <span className="label-text">Toggle Dark Theme</span>
+            <Theme />
+            <span className="label-text">Toggle Cupcake Theme</span>
           </label>
         </div>
       </div>
