@@ -50,9 +50,9 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({ publicId: result.public_id }, { status: 200 });
   } catch (error) {
-    console.error("Something went wrong in the uploading:", error);
+    console.error("Something went wrong in the image uploading:", error);
     return NextResponse.json(
-      { error: "something went wrong in the uploading" },
+      { error: "something went wrong in the image uploading" },
       { status: 500 }
     );
   }
