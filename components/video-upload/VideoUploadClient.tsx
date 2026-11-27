@@ -1,6 +1,7 @@
 "use client";
 
 import { useMutation, useQueryClient } from "@tanstack/react-query";
+import axios from "axios";
 import { useRouter } from "next/navigation";
 import React, { useRef, useState } from "react";
 
@@ -55,38 +56,35 @@ export default function VideoUploadClient() {
         formData.append("description", description.trim());
         formData.append("originalSize", String(file.size));
 
-        return await new Promise<VideoUploadResponse>((resolve, reject) => {
-          const xhr = new XMLHttpRequest();
-          xhr.open("POST", "/api/video-upload");
-
-          xhr.upload.onprogress = (event) => {
-            if (event.lengthComputable) {
-              const percent = Math.round((event.loaded / event.total) * 100);
-              setUploadProgress(percent);
+        try {
+          const { data } = await axios.post<VideoUploadResponse>(
+            "/api/video-upload",
+            formData,
+            {
+              onUploadProgress: (progressEvent) => {
+                if (progressEvent.total) {
+                  const percent = Math.round(
+                    (progressEvent.loaded * 100) / progressEvent.total
+                  );
+                  setUploadProgress(percent);
+                }
+              },
             }
-          };
+          );
 
-          xhr.onload = () => {
-            let parsed: { error?: string } & Partial<VideoUploadResponse> = {};
-            try {
-              parsed = JSON.parse(xhr.responseText);
-            } catch {
-              // ignore non-JSON body
-            }
-
-            if (xhr.status >= 200 && xhr.status < 300) {
-              resolve(parsed as VideoUploadResponse);
-            } else {
-              reject(new Error(parsed.error || "Failed to upload video"));
-            }
-          };
-
-          xhr.onerror = () => {
-            reject(new Error("Network error while uploading video"));
-          };
-
-          xhr.send(formData);
-        });
+          return data;
+        } catch (error) {
+          if (axios.isAxiosError<{ error?: string }>(error)) {
+            throw new Error(
+              error.response?.data?.error ||
+                error.message ||
+                "Failed to upload video"
+            );
+          }
+          throw error instanceof Error
+            ? error
+            : new Error("Failed to upload video");
+        }
       },
       onSuccess: async () => {
         await queryClient.invalidateQueries({ queryKey: ["videos"] });
