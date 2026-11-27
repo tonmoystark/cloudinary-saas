@@ -361,7 +361,7 @@ export default function SocialShareClient() {
                     crop="fill"
                     aspectRatio={activeAspectRatio}
                     gravity={gravity}
-                    className="max-h-[540px] w-auto rounded-lg object-contain shadow-md"
+                    className="max-h-135 w-auto rounded-lg object-contain shadow-md"
                     onLoad={() => setLoadedKey(previewKey)}
                     onError={() => {
                       setLoadedKey(previewKey);
