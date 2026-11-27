@@ -1,6 +1,7 @@
 "use client";
 
 import { useMutation } from "@tanstack/react-query";
+import axios from "axios";
 import { CldImage, getCldImageUrl } from "next-cloudinary";
 import React, { useState } from "react";
 
@@ -68,6 +69,7 @@ export default function SocialShareClient() {
   const [draftHeight, setDraftHeight] = useState<string>("1080");
   const [gravity, setGravity] = useState<GravityOption>("auto");
   const [loadedKey, setLoadedKey] = useState<string | null>(null);
+  const [uploadProgress, setUploadProgress] = useState<number>(0);
   const [fileError, setFileError] = useState<string | null>(null);
   const [transformError, setTransformError] = useState<string | null>(null);
 
@@ -92,22 +94,44 @@ export default function SocialShareClient() {
       const formData = new FormData();
       formData.append("file", file);
 
-      const response = await fetch("/api/image-upload", {
-        method: "POST",
-        body: formData,
-      });
+      try {
+        const { data } = await axios.post<UploadResponse>(
+          "/api/image-upload",
+          formData,
+          {
+            onUploadProgress: (progressEvent) => {
+              if (progressEvent.total) {
+                const percent = Math.round(
+                  (progressEvent.loaded * 100) / progressEvent.total
+                );
+                setUploadProgress(percent);
+              }
+            },
+          }
+        );
 
-      const data = await response.json().catch(() => ({}));
-      if (!response.ok) {
-        throw new Error(data.error || "Failed to upload image");
+        return data;
+      } catch (error) {
+        if (axios.isAxiosError<{ error?: string }>(error)) {
+          throw new Error(
+            error.response?.data?.error ||
+              error.message ||
+              "Failed to upload image"
+          );
+        }
+        throw error instanceof Error
+          ? error
+          : new Error("Failed to upload image");
       }
-
-      return data as UploadResponse;
     },
     onSuccess: (data) => {
       setFileError(null);
       setTransformError(null);
+      setUploadProgress(0);
       setUploadedImage(data.publicId);
+    },
+    onError: () => {
+      setUploadProgress(0);
     },
   });
 
@@ -127,12 +151,23 @@ export default function SocialShareClient() {
         format: "png",
       });
 
-      const response = await fetch(imageUrl);
-      if (!response.ok) {
-        throw new Error("Failed to download transformed image");
+      let blob: Blob;
+      try {
+        const response = await axios.get<Blob>(imageUrl, {
+          responseType: "blob",
+        });
+        blob = response.data;
+      } catch (error) {
+        if (axios.isAxiosError(error)) {
+          throw new Error(
+            error.message || "Failed to download transformed image"
+          );
+        }
+        throw error instanceof Error
+          ? error
+          : new Error("Failed to download transformed image");
       }
 
-      const blob = await response.blob();
       const url = window.URL.createObjectURL(blob);
       const ext = getExtensionFromMime(blob.type);
       const slug = selectedFormat
@@ -163,6 +198,7 @@ export default function SocialShareClient() {
     }
 
     setFileError(null);
+    setUploadProgress(0);
     uploadMutation.mutate(file);
   };
 
@@ -210,10 +246,22 @@ export default function SocialShareClient() {
             {uploadMutation.isPending && (
               <div className="mt-4 space-y-2">
                 <div className="flex items-center justify-between text-sm">
-                  <span>Uploading to Cloudinary...</span>
+                  <span>
+                    {uploadProgress < 100
+                      ? `Uploading to Cloudinary... ${uploadProgress}%`
+                      : "Processing on Cloudinary..."}
+                  </span>
                   <span className="loading loading-dots loading-sm text-primary" />
                 </div>
-                <progress className="progress progress-primary w-full" />
+                {uploadProgress < 100 ? (
+                  <progress
+                    className="progress progress-primary w-full"
+                    value={uploadProgress}
+                    max={100}
+                  />
+                ) : (
+                  <progress className="progress progress-primary w-full" />
+                )}
               </div>
             )}
 
